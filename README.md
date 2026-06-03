@@ -1,8 +1,8 @@
-# 📸 Facial Attendance & Check-In Kiosk System
+# 📸 Attendio — Smart Facial Attendance & Check-In Kiosk System
 
 A modern, highly accurate, and real-time facial recognition attendance tracking system built with **Django**, **face_recognition**, **OpenCV**, and **SQLite**. 
 
-This system features **both** a local desktop scanner (via OpenCV) and a fully-integrated browser-based kiosk scanner (using HTML5 camera capture and AJAX frame streaming). It simplifies attendance tracking for organizations, schools, or offices with automated late detection, customizable shift schedules, and dynamic performance ratings.
+**Attendio** features **both** a local desktop scanner (via OpenCV) and a fully-integrated browser-based kiosk scanner (using HTML5 camera capture and AJAX frame streaming). It simplifies attendance tracking for organizations, schools, or offices with automated late detection, customizable shift schedules, and dynamic performance ratings.
 
 ---
 
