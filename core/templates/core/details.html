@@ -2,210 +2,424 @@
 {% load static %}
 {% block content %}
 
+<style>
+    .kiosk-container {
+        max-width: 1200px;
+        margin: 30px auto;
+    }
+    #scanner-camera-container {
+        position: relative;
+        background: #111;
+        border-radius: 16px;
+        overflow: hidden;
+        box-shadow: 0 8px 30px rgba(0,0,0,0.5);
+        border: 1px solid #333;
+    }
+    #scanner-video {
+        width: 100%;
+        display: block;
+        transform: scaleX(-1); /* Mirror effect */
+    }
+    .scanner-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        pointer-events: none;
+    }
+    .scanner-frame {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 220px;
+        height: 280px;
+        border: 2px dashed rgba(0, 198, 255, 0.5);
+        border-radius: 50%;
+        box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.4); /* Dim outside the oval */
+    }
+    .scanner-status {
+        position: absolute;
+        bottom: 20px;
+        left: 0;
+        right: 0;
+        text-align: center;
+    }
+    .scanner-status .badge {
+        font-size: 15px;
+        padding: 8px 20px;
+        border-radius: 30px;
+        background: rgba(0,0,0,0.85);
+        border: 1px solid #444;
+    }
+    .pulse-dot {
+        display: inline-block;
+        width: 11px;
+        height: 11px;
+        border-radius: 50%;
+        background: #ff4444;
+        margin-right: 8px;
+        animation: pulse 1.5s infinite;
+    }
+    .pulse-dot.active {
+        background: #00c853;
+    }
+    @keyframes pulse {
+        0% { opacity: 1; transform: scale(1); }
+        50% { opacity: 0.4; transform: scale(1.3); }
+        100% { opacity: 1; transform: scale(1); }
+    }
+    .checkin-list-card {
+        background: #ffffff;
+        border-radius: 16px;
+        border: 1px solid #e0e0e0;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+    }
+    .checkin-list-header {
+        background: #f8f9fa;
+        border-bottom: 1px solid #e0e0e0;
+        padding: 15px 20px;
+        border-top-left-radius: 16px;
+        border-top-right-radius: 16px;
+        font-weight: 600;
+        color: #495057;
+    }
+    .checkin-list-body {
+        padding: 15px 20px;
+        overflow-y: auto;
+        flex-grow: 1;
+        max-height: 430px;
+    }
+    .checkin-item {
+        display: flex;
+        align-items: center;
+        padding: 12px 0;
+        border-bottom: 1px dashed #e9ecef;
+        animation: fadeIn 0.5s ease-out;
+    }
+    .checkin-item:last-child {
+        border-bottom: none;
+    }
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(-10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+</style>
 
-{% if profile == None %}
-<div class="container emp-profile">
+<!-- Toast Container for Notifications -->
+<div id="toast-container" style="position: fixed; top: 20px; right: 20px; z-index: 1050; display: flex; flex-direction: column; gap: 10px; pointer-events: none;"></div>
+
+<div class="container kiosk-container">
+    <div class="row align-items-center mb-4">
+        <div class="col-md-8">
+            <h3 class="text-dark font-weight-bold mb-1">Employee Check-In Kiosk</h3>
+            <p class="text-muted mb-0">Continuous facial recognition attendance scanner</p>
+        </div>
+        <div class="col-md-4 text-right">
+            <a href="{% url 'index' %}" class="btn btn-outline-primary shadow-sm">
+                ← Return to Dashboard
+            </a>
+        </div>
+    </div>
 
     <div class="row">
-        <div class="col-md-5">
+        <!-- Live Camera Feed (Left) -->
+        <div class="col-md-7 mb-4">
+            <div id="scanner-camera-container">
+                <video id="scanner-video" autoplay playsinline></video>
+                <canvas id="scanner-canvas" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 10;"></canvas>
+                <div class="scanner-overlay" style="z-index: 15;">
+                    <div class="scanner-frame"></div>
+                    <div class="scanner-status">
+                        <span class="badge text-white">
+                            <span class="pulse-dot" id="camera-dot"></span>
+                            <span id="camera-label">Starting camera...</span>
+                        </span>
+                    </div>
+                </div>
+            </div>
+            <p class="text-center mt-2 mb-0">
+                <small class="text-muted">📷 Kiosk Scanner Mode — Face the camera to check-in</small>
+            </p>
+        </div>
 
-            <div class="alert alert-warning">
-                <svg width="1.0625em" height="1em" viewBox="0 0 17 16" class="bi bi-exclamation-triangle"
-                    fill="currentColor" xmlns="http://www.w3.org/2000/svg">
-                    <path fill-rule="evenodd"
-                        d="M7.938 2.016a.146.146 0 0 0-.054.057L1.027 13.74a.176.176 0 0 0-.002.183c.016.03.037.05.054.06.015.01.034.017.066.017h13.713a.12.12 0 0 0 .066-.017.163.163 0 0 0 .055-.06.176.176 0 0 0-.003-.183L8.12 2.073a.146.146 0 0 0-.054-.057A.13.13 0 0 0 8.002 2a.13.13 0 0 0-.064.016zm1.044-.45a1.13 1.13 0 0 0-1.96 0L.165 13.233c-.457.778.091 1.767.98 1.767h13.713c.889 0 1.438-.99.98-1.767L8.982 1.566z" />
-                    <path
-                        d="M7.002 12a1 1 0 1 1 2 0 1 1 0 0 1-2 0zM7.1 5.995a.905.905 0 1 1 1.8 0l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 5.995z" />
-                </svg>
-
-                <p><b>Note: </b>
-                <ul>
-                    <li>It takes some time to turn on the scanner if your computer hardware
-                        does not meet the requirements of the face recognition software</li>
-                    <li>consider providing good lighting and good resolution cameras
-                        for the software to work properly</li>
-                </ul>
-                <small>(this window will disappear after running the first scan)</small>
-                </p>
-
+        <!-- Recent Check-ins List (Right) -->
+        <div class="col-md-5 mb-4">
+            <div class="checkin-list-card">
+                <div class="checkin-list-header d-flex justify-content-between align-items-center">
+                    <span>Recent Check-ins</span>
+                    <span class="badge badge-secondary" id="checkin-count">0 today</span>
+                </div>
+                <div class="checkin-list-body" id="checkin-list">
+                    <div class="text-center text-muted py-5" id="no-checkins-msg">
+                        <svg width="3em" height="3em" viewBox="0 0 16 16" class="bi bi-clock-history mb-3" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                            <path fill-rule="evenodd" d="M8.515 1.019A7 7 0 0 0 8 1V0a8 8 0 0 1 .589.022l-.074.997zm2.004.45a7 7 0 0 0-.985-.299l.219-.976c.383.086.76.2 1.126.342l-.36.933zm1.37.71a7 7 0 0 0-.439-.27l.493-.87a8 8 0 0 1 .979.654l-.615.789a7 7 0 0 0-.418-.302zm1.834 1.79a6.99 6.99 0 0 0-.653-.796l.724-.69c.27.285.52.59.747.91l-.818.576zm.744 2.064c-.036-.262-.09-.52-.163-.773l.96-.274c.11.375.183.765.22 1.161l-.984.07-.033-.184zm.022 1.834a7 7 0 0 0-.184-.615l.933-.36c.15.39.267.79.35 1.196l-.976.22a7.012 7.012 0 0 0-.123-.441zm-.815 1.934a7.02 7.02 0 0 0-.439-.653l.789-.615c.16.205.305.424.436.654l-.786.614zm-1.37 1.834a7 7 0 0 0-.653-.439l.614-.786c.23.18.45.38.654.615l-.615.61zm-1.834 1.37a7 7 0 0 0-.615-.184l.36-.933c.3.085.6.2.87.342l-.615.775zm-2.064.744c-.262-.036-.52-.09-.773-.163l.274-.96c.375.11.765.183 1.161.22l-.07.984a7.012 7.012 0 0 0-.592-.081zm-1.834.022a7 7 0 0 0-.615-.184l.22-.976c.39.085.79.15 1.196.22l-.801.94zm-1.934-.815a7.02 7.02 0 0 0-.653-.439l.615-.789c.205.16.424.305.654.436l-.616.792zm-1.834-1.37a7 7 0 0 0-.439-.653l.786-.614c.18.23.38.45.615.654l-.962.613zm-1.37-1.834a7 7 0 0 0-.184-.615l.933-.36c.085.3.2.6.342.87l-.775.615zm-.744-2.064a7.012 7.012 0 0 0-.163-.773l.96-.274c.085.39.15.79.22 1.196l-.984.07-.033-.349zm-.022-1.834a7 7 0 0 0 .184-.615l.976.22c-.085.39-.15.79-.22 1.196l-.94-.801zm.815-1.934c.18-.23.38-.45.615-.653l.614.786c-.23.18-.45.38-.654.615l-.575-.748zm1.37-1.834c.23-.18.45-.38.653-.615l.789.615c-.205.23-.424.45-.654.653l-.788-.653zm1.834-1.37a7 7 0 0 0 .615-.184l.36.933c-.3.085-.6.2-.87.342l-.105-.99zm2.064-.744c.262-.036.52-.09.773-.163l-.274.96c-.375-.11-.765-.183-1.161-.22l.662-.577z"/>
+                            <path fill-rule="evenodd" d="M8 3.5a.5.5 0 0 0-.5.5v4a.5.5 0 0 0 .252.434l3.5 2a.5.5 0 0 0 .496-.868L8.5 8V4a.5.5 0 0 0-.5-.5z"/>
+                        </svg>
+                        <p class="mb-0">Waiting for check-ins...</p>
+                    </div>
+                </div>
             </div>
         </div>
-        <div class="col-md-1">
-
-        </div>
-
-        <div class="col-md-6">
-            <div>
-                <img src="{% static 'img/fgirl.jpg'%}" alt="" width="99%">
-            </div>
-        </div>
-
     </div>
 </div>
-{% else %}
-<div class="container emp-profile">
-        <div class="row">
-            <div class="col-md-4">
-                <div class="profile-img">
-                    <img src="{{ profile.image.url }}" alt="" />
-                </div>
-            </div>
-            <div class="col-md-6">
-                <div class="profile-head">
-                    <h5>
-                        {{profile.first_name}} {{profile.last_name}}
-                    </h5>
-                    <h6>
-                        {{profile.profession }}
-                    </h6>
-                    <p class="proile-rating">RANKINGS : <span>{{profile.ranking}}/10</span></p>
-                    <ul class="nav nav-tabs" id="myTab" role="tablist">
-                        <li class="nav-item">
-                            <a class="nav-link active" id="home-tab" data-toggle="tab" href="#home" role="tab"
-                                aria-controls="home" aria-selected="true">About</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" id="profile-tab" data-toggle="tab" href="#profile" role="tab"
-                                aria-controls="profile" aria-selected="false">Timeline</a>
-                        </li>
-                    </ul>
-                </div>
-            </div>
-            <div class="col-md-2">
-                <a href="{% url 'edit_profile' profile.id %}"><input type="button" class="profile-edit-btn" name="btnAddMore" value="Edit Profile" /></a>
-            </div>
-        </div>
-        <div class="row">
-            <div class="col-md-4">
-                <div class="profile-work">
-                    <p>WORK LINK</p>
-                    <a href="">Website Link</a><br />
-                    <a href="">Bootsnipp Profile</a><br />
-                    <a href="">Bootply Profile</a>
-                    <p>SKILLS</p>
-                    <a href="">Web Designer</a><br />
-                    <a href="">Web Developer</a><br />
-                    <a href="">WordPress</a><br />
-                    <a href="">WooCommerce</a><br />
-                    <a href="">PHP, .Net</a><br />
-                </div>
-            </div>
-            <div class="col-md-8">
-                <div class="tab-content profile-tab" id="myTabContent">
-                    <div class="tab-pane fade show active" id="home" role="tabpanel" aria-labelledby="home-tab">
-                        <div class="row">
-                            <div class="col-md-6">
-                                <label>Profile Id</label>
-                            </div>
-                            <div class="col-md-6">
-                                <p>{{profile.id}}</p>
-                            </div>
-                        </div>
-                        <div class="row">
-                            <div class="col-md-6">
-                                <label>Name</label>
-                            </div>
-                            <div class="col-md-6">
-                                <p>{{profile.first_name}} {{profile.last_name}}</p>
-                            </div>
-                        </div>
-                        <div class="row">
-                            <div class="col-md-6">
-                                <label>Email</label>
-                            </div>
-                            <div class="col-md-6">
-                                <p>{{profile.email}}</p>
-                            </div>
-                        </div>
-                        <div class="row">
-                            <div class="col-md-6">
-                                <label>Phone</label>
-                            </div>
-                            <div class="col-md-6">
-                                <p>0{{profile.phone}}</p>
-                            </div>
-                        </div>
-                        <div class="row">
-                            <div class="col-md-6">
-                                <label>Profession</label>
-                            </div>
-                            <div class="col-md-6">
-                                <p>{{ profile.profession }}</p>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="tab-pane fade" id="profile" role="tabpanel" aria-labelledby="profile-tab">
-                        <div class="row">
-                            <div class="col-md-6">
-                                <label>Experience</label>
-                            </div>
-                            <div class="col-md-6">
-                                <p>Expert</p>
-                            </div>
-                        </div>
-                        <div class="row">
-                            <div class="col-md-6">
-                                <label>Hourly Rate</label>
-                            </div>
-                            <div class="col-md-6">
-                                <p>10$/hr</p>
-                            </div>
-                        </div>
-                        <div class="row">
-                            <div class="col-md-6">
-                                <label>Total Projects</label>
-                            </div>
-                            <div class="col-md-6">
-                                <p>230</p>
-                            </div>
-                        </div>
-                        <div class="row">
-                            <div class="col-md-6">
-                                <label>English Level</label>
-                            </div>
-                            <div class="col-md-6">
-                                <p>Expert</p>
-                            </div>
-                        </div>
-                        <div class="row">
-                            <div class="col-md-6">
-                                <label>Availability</label>
-                            </div>
-                            <div class="col-md-6">
-                                <p>6 months</p>
-                            </div>
-                        </div>
-                        <div class="row">
-                            <div class="col-md-12">
-                                <label>Your Bio</label><br />
-                                <p>Your detail description</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-</div>
-{% endif %}
-
-
-
-<p id="last_face" class="d-none">{{last_face}}</p>
 
 <script>
-    setInterval(function () {
-        var url = 'http://127.0.0.1:8000/ajax/';
-        var last_face = document.getElementById('last_face').innerHTML;
-        $.ajax({
-            url: url,
-            success: function (data) {
-                if (data != last_face) {
-                    location.reload()
-                }
-            }
-        })
-    }, 3000);
+    // --- Live Camera Preview & Real-Time Scanning ---
+    (function() {
+        const video = document.getElementById('scanner-video');
+        const dot = document.getElementById('camera-dot');
+        const label = document.getElementById('camera-label');
+        const canvas = document.getElementById('scanner-canvas');
+        const checkinList = document.getElementById('checkin-list');
+        const checkinCountBadge = document.getElementById('checkin-count');
+        const noCheckinsMsg = document.getElementById('no-checkins-msg');
+        
+        if (!video) return;
 
+        // Recently Scanned Cooldown tracking
+        const recentlyScanned = {}; // name -> timestamp
+        const COOLDOWN_MS = 15000; // 15 seconds cooldown for the same person
+        let todayCheckinsCount = 0;
+
+        // Custom notification system (HTML toasts)
+        function showToast(message, type = 'success') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            // Enable mouse events specifically for closing
+            toast.style.pointerEvents = 'auto';
+            toast.className = `alert alert-${type === 'success' ? 'success' : 'warning'} alert-dismissible fade show shadow`;
+            toast.style.minWidth = '320px';
+            toast.style.borderRadius = '10px';
+            toast.style.borderLeft = `6px solid ${type === 'success' ? '#28a745' : '#ffc107'}`;
+            toast.style.background = '#ffffff';
+            toast.style.color = '#333333';
+            
+            toast.innerHTML = `
+                <div class="d-flex align-items-center">
+                    <div style="font-size: 24px; margin-right: 12px;">
+                        ${type === 'success' ? '✅' : '⚠️'}
+                    </div>
+                    <div>
+                        <strong style="color: ${type === 'success' ? '#28a745' : '#e0a800'}">
+                            ${type === 'success' ? 'Checked In' : 'Alert'}
+                        </strong>
+                        <div class="small text-dark font-weight-bold mt-1">${message}</div>
+                    </div>
+                </div>
+                <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            `;
+            
+            container.appendChild(toast);
+            
+            // Auto close toast
+            setTimeout(() => {
+                $(toast).alert('close');
+            }, 4000);
+        }
+
+        // Web Audio API Beep
+        function playWebBeep() {
+            try {
+                const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                const oscillator = audioCtx.createOscillator();
+                const gainNode = audioCtx.createGain();
+                
+                oscillator.connect(gainNode);
+                gainNode.connect(audioCtx.destination);
+                
+                oscillator.type = 'sine';
+                oscillator.frequency.setValueAtTime(1000, audioCtx.currentTime); // 1000Hz
+                gainNode.gain.setValueAtTime(0.12, audioCtx.currentTime); // volume
+                
+                oscillator.start();
+                setTimeout(() => {
+                    oscillator.stop();
+                    audioCtx.close();
+                }, 180);
+            } catch (e) {
+                console.error("Audio Context error:", e);
+            }
+        }
+
+        // Update the Recent Check-ins List on the right
+        function addToCheckinList(name, status) {
+            if (noCheckinsMsg) {
+                noCheckinsMsg.style.display = 'none';
+            }
+
+            todayCheckinsCount++;
+            checkinCountBadge.textContent = `${todayCheckinsCount} today`;
+
+            const now = new Date();
+            const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+
+            const statusLabel = status === 'on_time' ? 'On Time' : (status === 'late' ? 'Late' : '');
+            const badgeClass = status === 'on_time' ? 'badge-success' : 'badge-warning';
+            const statusBadge = statusLabel ? `<span class="badge ${badgeClass} ml-2">${statusLabel}</span>` : '';
+
+            const item = document.createElement('div');
+            item.className = 'checkin-item';
+            item.innerHTML = `
+                <div style="font-size: 20px; margin-right: 12px;">👤</div>
+                <div style="flex-grow: 1;">
+                    <div class="font-weight-bold text-dark">${name} ${statusBadge}</div>
+                    <div class="small text-muted">${timeStr}</div>
+                </div>
+            `;
+
+            // Insert at the top of the list
+            checkinList.insertBefore(item, checkinList.firstChild);
+
+            // Limit list to last 6 entries
+            while (checkinList.children.length > 6) {
+                checkinList.removeChild(checkinList.lastChild);
+            }
+        }
+
+        if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+            navigator.mediaDevices.getUserMedia({
+                video: {
+                    width: { ideal: 640 },
+                    height: { ideal: 480 },
+                    facingMode: 'user'
+                }
+            })
+            .then(function(stream) {
+                video.srcObject = stream;
+                if (dot) dot.classList.add('active');
+                if (label) label.textContent = 'Kiosk Active — Ready to scan';
+
+                // Stop camera when navigating away
+                window.addEventListener('beforeunload', function() {
+                    stream.getTracks().forEach(function(t) { t.stop(); });
+                });
+
+                if (canvas) {
+                    const ctx = canvas.getContext('2d');
+                    canvas.width = 640;
+                    canvas.height = 480;
+
+                    // Hidden capture canvas
+                    const captureCanvas = document.createElement('canvas');
+                    captureCanvas.width = 640;
+                    captureCanvas.height = 480;
+                    const captureCtx = captureCanvas.getContext('2d');
+
+                    setInterval(function() {
+                        if (video.paused || video.ended) return;
+
+                        // Draw current video frame to capture canvas
+                        captureCtx.drawImage(video, 0, 0, captureCanvas.width, captureCanvas.height);
+                        const dataUrl = captureCanvas.toDataURL('image/jpeg', 0.8);
+
+                        // POST frame to backend
+                        fetch('/scan_frame/', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify({ image: dataUrl })
+                        })
+                        .then(res => res.json())
+                        .then(data => {
+                            // Clear canvas drawings
+                            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+                            if (data.success && data.results && data.results.length > 0) {
+                                // Mirror drawing context for mirrored video
+                                ctx.save();
+                                ctx.translate(canvas.width, 0);
+                                ctx.scale(-1, 1);
+
+                                data.results.forEach(result => {
+                                    const box = result.box;
+                                    const x = box.left;
+                                    const y = box.top;
+                                    const width = box.right - box.left;
+                                    const height = box.bottom - box.top;
+
+                                    ctx.lineWidth = 4;
+                                     if (result.matched) {
+                                         if (result.already_checked_in) {
+                                             ctx.strokeStyle = '#ffc107'; // orange
+                                             ctx.fillStyle = '#ffc107';
+                                             
+                                             const now = Date.now();
+                                             const nameKey = result.name;
+                                             if (!recentlyScanned[nameKey] || (now - recentlyScanned[nameKey] > COOLDOWN_MS)) {
+                                                 recentlyScanned[nameKey] = now;
+                                                 showToast(`${result.name}: already checked in today at ${result.scan_time}`, 'warning');
+                                             }
+                                         } else {
+                                             ctx.strokeStyle = '#00c853'; // green
+                                             ctx.fillStyle = '#00c853';
+                                             
+                                             // Cooldown check
+                                             const now = Date.now();
+                                             const nameKey = result.name;
+                                             if (!recentlyScanned[nameKey] || (now - recentlyScanned[nameKey] > COOLDOWN_MS)) {
+                                                 recentlyScanned[nameKey] = now;
+                                                 
+                                                 // Action items on successful check-in
+                                                 playWebBeep();
+                                                 showToast(result.name, 'success');
+                                                 addToCheckinList(result.name, result.status);
+                                             }
+                                         }
+                                     } else {
+                                         ctx.strokeStyle = '#ff4444'; // red
+                                         ctx.fillStyle = '#ff4444';
+                                     }
+
+                                    // Draw bounding box
+                                    ctx.strokeRect(x, y, width, height);
+                                    ctx.fillRect(x, y - 25, width, 25);
+
+                                    // Draw text label (restored scale for normal text reading)
+                                    ctx.restore();
+                                    ctx.save();
+                                    
+                                    const textX = canvas.width - box.right + 5;
+                                    const textText = result.matched 
+                                        ? `${result.name} (${result.distance})` 
+                                        : `Unknown (${result.distance})`;
+                                    ctx.fillStyle = '#ffffff';
+                                    ctx.font = 'bold 13px Arial';
+                                    ctx.fillText(textText, textX, y - 7);
+                                    
+                                    // Re-mirror for next iteration
+                                    ctx.restore();
+                                    ctx.save();
+                                    ctx.translate(canvas.width, 0);
+                                    ctx.scale(-1, 1);
+                                });
+
+                                ctx.restore();
+                            } else {
+                                if (label) label.textContent = 'Kiosk Active — Ready to scan';
+                            }
+                        })
+                        .catch(err => {
+                            console.error("Frame scanning failed:", err);
+                        });
+                    }, 800);
+                }
+            })
+            .catch(function(err) {
+                if (label) label.textContent = 'Camera: ' + err.message;
+                console.error('Camera error:', err);
+            });
+        } else {
+            if (label) label.textContent = 'Camera not supported';
+        }
+    })();
 </script>
 
 {% endblock content %}

@@ -1,0 +1,135 @@
+{% extends "core/base.html" %}
+{% load static %}
+{% block content %}
+
+<div class="saas-card">
+    <div class="saas-card-header d-flex justify-content-between align-items-center">
+        <div>
+            <h4 class="mb-1 text-dark" style="letter-spacing: -0.5px;">Attendance Reports</h4>
+            <p class="text-muted mb-0 small">Review and filter historical check-in logs and arrival timelines.</p>
+        </div>
+    </div>
+    
+    <div class="saas-card-body pb-0 border-bottom">
+        <!-- Filter Form -->
+        <form method="GET" action="{% url 'attendance_report' %}" class="row mb-3 align-items-end">
+            <div class="col-md-3 mb-2">
+                <label class="small text-muted font-weight-bold">Arrival Status</label>
+                <select name="status" class="form-control">
+                    <option value="">All Statuses</option>
+                    <option value="on_time" {% if status_filter == "on_time" %}selected{% endif %}>On Time</option>
+                    <option value="late" {% if status_filter == "late" %}selected{% endif %}>Late</option>
+                    <option value="absent" {% if status_filter == "absent" %}selected{% endif %}>Absent</option>
+                </select>
+            </div>
+            <div class="col-md-3 mb-2">
+                <label class="small text-muted font-weight-bold">Scan Date</label>
+                <input type="date" name="date" value="{{ date_filter }}" class="form-control">
+            </div>
+            <div class="col-md-3 mb-2">
+                <label class="small text-muted font-weight-bold">Employee Name</label>
+                <input type="text" name="profile" value="{{ profile_filter }}" placeholder="Search employees..." class="form-control">
+            </div>
+            <div class="col-md-3 mb-2 d-flex gap-2">
+                <button type="submit" class="btn btn-saas-primary flex-grow-1">
+                    <i class="fas fa-filter mr-1"></i>Apply Filters
+                </button>
+                <a href="{% url 'attendance_report' %}" class="btn btn-saas-secondary">
+                    Clear
+                </a>
+            </div>
+        </form>
+    </div>
+
+    <!-- Stats summary inside the card -->
+    <div class="saas-card-body bg-light border-bottom py-3">
+        <div class="row text-center">
+            <div class="col-md-3 border-right">
+                <small class="text-muted font-weight-bold uppercase d-block" style="font-size: 10px; letter-spacing: 0.1em;">Total Scanned</small>
+                <h4 class="mb-0 text-dark font-weight-bold">{{ total }}</h4>
+            </div>
+            <div class="col-md-3 border-right">
+                <small class="text-muted font-weight-bold uppercase d-block" style="font-size: 10px; letter-spacing: 0.1em; color: var(--success) !important;">On Time</small>
+                <h4 class="mb-0 text-success font-weight-bold">{{ on_time_count }}</h4>
+            </div>
+            <div class="col-md-3 border-right">
+                <small class="text-muted font-weight-bold uppercase d-block" style="font-size: 10px; letter-spacing: 0.1em; color: var(--warning) !important;">Late Arrivals</small>
+                <h4 class="mb-0 text-warning font-weight-bold">{{ late_count }}</h4>
+            </div>
+            <div class="col-md-3">
+                <small class="text-muted font-weight-bold uppercase d-block" style="font-size: 10px; letter-spacing: 0.1em; color: var(--danger) !important;">Absent</small>
+                <h4 class="mb-0 text-danger font-weight-bold">{{ absent_count }}</h4>
+            </div>
+        </div>
+    </div>
+    
+    <div class="saas-card-body p-0">
+        <div class="table-responsive">
+            <table class="saas-table">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Employee</th>
+                        <th>Shift / Department</th>
+                        <th>Date</th>
+                        <th>Scan Time</th>
+                        <th>Arrival Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for record in records %}
+                    <tr>
+                        <td>{{ forloop.counter }}</td>
+                        <td>
+                            <div class="d-flex align-items-center gap-2">
+                                <div class="avatar-placeholder">
+                                    {{ record.profile.first_name|slice:":1" }}{{ record.profile.last_name|slice:":1" }}
+                                </div>
+                                <div>
+                                    <span class="font-weight-bold d-block">{{ record.profile.first_name }} {{ record.profile.last_name }}</span>
+                                    <small class="text-muted">{{ record.profile.email }}</small>
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            {% if record.schedule %}
+                                <span class="badge-saas badge-saas-secondary" style="background-color: var(--primary-light); color: var(--primary-color);">
+                                    {{ record.schedule.subject.name }}
+                                </span>
+                            {% else %}
+                                <span class="text-muted">—</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ record.date|date:"l, M d, Y" }}</td>
+                        <td>
+                            {% if record.scan_time %}
+                                <i class="far fa-clock text-muted mr-1"></i>{{ record.scan_time|time:"h:i A" }}
+                            {% else %}
+                                <span class="text-muted">Not scanned</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if record.status == "on_time" %}
+                                <span class="badge-saas badge-saas-success"><i class="fas fa-check mr-1"></i>On Time</span>
+                            {% elif record.status == "late" %}
+                                <span class="badge-saas badge-saas-warning"><i class="fas fa-exclamation mr-1"></i>Late</span>
+                            {% else %}
+                                <span class="badge-saas badge-saas-danger"><i class="fas fa-times mr-1"></i>Absent</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" class="text-center py-5 text-muted">
+                            <i class="fas fa-clipboard-list d-block mb-3" style="font-size: 36px;"></i>
+                            No attendance records match your filter criteria.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+{% endblock content %}

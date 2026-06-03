@@ -1,0 +1,68 @@
+{% extends "core/base.html" %}
+{% load static %}
+{% block content %}
+
+<div class="saas-card">
+    <div class="saas-card-header">
+        <div>
+            <h4 class="mb-1 text-dark" style="letter-spacing: -0.5px;">Schedule Configuration</h4>
+            <p class="text-muted mb-0 small">Create or update shifts, active hours, and grace times for employees.</p>
+        </div>
+    </div>
+    
+    <div class="saas-card-body">
+        <form method="POST" action="." class="needs-validation">
+            {% csrf_token %}
+            <div class="row">
+                <!-- Core Settings -->
+                <div class="col-md-6 mb-4">
+                    <h5 class="text-dark font-weight-bold mb-3" style="font-size: 16px;"><i class="far fa-calendar-alt text-muted mr-2"></i>Assignment</h5>
+                    
+                    <div class="mb-3">
+                        <label class="small text-muted font-weight-bold">Select Employee</label>
+                        {{ form.profile }}
+                    </div>
+                    <div class="mb-3">
+                        <label class="small text-muted font-weight-bold">Department / Subject</label>
+                        {{ form.subject }}
+                    </div>
+                    <div class="mb-3">
+                        <label class="small text-muted font-weight-bold">Working Day(s)</label>
+                        {{ form.day_of_week }}
+                    </div>
+                </div>
+
+                <!-- Time Settings -->
+                <div class="col-md-6 mb-4">
+                    <h5 class="text-dark font-weight-bold mb-3" style="font-size: 16px;"><i class="far fa-clock text-muted mr-2"></i>Shift Timing</h5>
+
+                    <div class="row">
+                        <div class="col-6 mb-3">
+                            <label class="small text-muted font-weight-bold">Start Time</label>
+                            {{ form.start_time }}
+                        </div>
+                        <div class="col-6 mb-3">
+                            <label class="small text-muted font-weight-bold">End Time</label>
+                            {{ form.end_time }}
+                        </div>
+                    </div>
+                    <div class="mb-3" style="max-width: 180px;">
+                        <label class="small text-muted font-weight-bold">Grace Period (Minutes)</label>
+                        {{ form.grace_period_minutes }}
+                    </div>
+                </div>
+            </div>
+            
+            <div class="border-top pt-3 text-right">
+                <a href="{% url 'schedules' %}" class="btn btn-saas-secondary mr-2">
+                    Cancel
+                </a>
+                <button type="submit" class="btn btn-saas-primary">
+                    <i class="fas fa-save mr-2"></i>Save Schedule
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% endblock content %}

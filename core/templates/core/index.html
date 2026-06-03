@@ -2,129 +2,809 @@
 {% load static %}
 {% block content %}
 
-<div class="container emp-profile">
+<style>
+    /* Page Specific Layout */
+    .dashboard-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 32px;
+    }
+    .header-title-area h2 {
+        font-size: 28px;
+        margin-bottom: 4px;
+        letter-spacing: -0.5px;
+    }
+    .live-clock-card {
+        text-align: right;
+    }
+    .live-time {
+        font-family: var(--font-heading);
+        font-size: 20px;
+        font-weight: 700;
+        color: var(--primary-color);
+    }
+    .live-date {
+        font-size: 14px;
+        color: var(--text-muted);
+    }
 
-    <div class="row">
-        <div class="col-md-3">
-            <img src="{% static 'img/fcicon.png'%}" alt="" width="50%">
-            <h6 class="text-muted p-1"> FR-CV2-Django</h6>
+    /* Tabs Styling */
+    .nav-saas-tabs {
+        border-bottom: 2px solid var(--border-color);
+        margin-bottom: 20px;
+        gap: 16px;
+    }
+    .nav-saas-tabs .nav-link {
+        font-family: var(--font-heading);
+        font-weight: 600;
+        font-size: 15px;
+        color: var(--text-muted);
+        border: none !important;
+        padding: 12px 4px;
+        background: transparent !important;
+        position: relative;
+        transition: color 0.2s ease;
+    }
+    .nav-saas-tabs .nav-link:hover {
+        color: var(--text-main);
+    }
+    .nav-saas-tabs .nav-link.active {
+        color: var(--primary-color) !important;
+    }
+    .nav-saas-tabs .nav-link.active::after {
+        content: '';
+        position: absolute;
+        bottom: -2px;
+        left: 0;
+        right: 0;
+        height: 2px;
+        background-color: var(--primary-color);
+        border-radius: 9999px;
+    }
 
+    /* Kiosk camera aspect ratio card */
+    #scanner-camera-container {
+        position: relative;
+        width: 100%;
+        padding-top: 75%; /* 4:3 Aspect Ratio */
+        background: #0f172a;
+        border-radius: var(--radius-lg);
+        overflow: hidden;
+        box-shadow: var(--shadow-lg);
+        border: 1px solid #1e293b;
+    }
+    #scanner-video {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        transform: scaleX(-1); /* Mirror effect */
+    }
+    #scanner-canvas {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        z-index: 10;
+        pointer-events: none;
+    }
+    .scanner-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        pointer-events: none;
+        z-index: 15;
+    }
+    .scanner-status {
+        position: absolute;
+        bottom: 16px;
+        left: 0;
+        right: 0;
+        text-align: center;
+        z-index: 20;
+    }
+    .pulse-dot {
+        display: inline-block;
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background: #ef4444;
+        margin-right: 8px;
+        animation: pulse 1.5s infinite;
+    }
+    .pulse-dot.active {
+        background: var(--success);
+    }
+    @keyframes pulse {
+        0% { opacity: 1; transform: scale(1); }
+        50% { opacity: 0.4; transform: scale(1.3); }
+        100% { opacity: 1; transform: scale(1); }
+    }
+
+    /* Recent Check-ins Panel */
+    .recent-checkins-card {
+        height: auto;
+        display: flex;
+        flex-direction: column;
+        border: 1px solid var(--border-color);
+        border-radius: var(--radius-lg);
+        background: var(--card-bg);
+        box-shadow: var(--shadow-sm);
+        margin-top: 24px;
+        overflow: hidden;
+    }
+    .recent-checkins-header {
+        padding: 16px 20px;
+        border-bottom: 1px solid var(--border-color);
+        font-family: var(--font-heading);
+        font-weight: 700;
+        color: var(--text-main);
+        background-color: #fafafa;
+    }
+    .recent-checkins-body {
+        padding: 12px 20px;
+        max-height: 250px;
+        overflow-y: auto;
+    }
+    .recent-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px 0;
+        border-bottom: 1px dashed var(--border-color);
+        animation: slideDown 0.3s ease-out;
+    }
+    .recent-item:last-child {
+        border-bottom: none;
+    }
+    .avatar-placeholder {
+        width: 38px;
+        height: 38px;
+        border-radius: 50%;
+        background-color: var(--primary-light);
+        color: var(--primary-color);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        font-size: 14px;
+    }
+    @keyframes slideDown {
+        from { opacity: 0; transform: translateY(-10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+</style>
+
+<!-- Toast Container for Notifications -->
+<div id="toast-container" style="position: fixed; top: 20px; right: 20px; z-index: 1050; display: flex; flex-direction: column; gap: 10px; pointer-events: none;"></div>
+
+<!-- Header -->
+<div class="dashboard-header">
+    <div class="header-title-area">
+        <h2>Workforce Dashboard</h2>
+        <p class="text-muted mb-0">Monitor real-time employee attendance and check-in statuses.</p>
+    </div>
+    
+    <div class="live-clock-card">
+        <div class="live-time" id="clock-time">--:--:-- --</div>
+        <div class="live-date" id="clock-date">Loading date...</div>
+    </div>
+</div>
+
+<!-- Metrics Row -->
+<div class="row mb-4">
+    <div class="col-md-3 mb-3">
+        <div class="metric-card">
+            <div class="d-flex justify-content-between align-items-center">
+                <span class="metric-label">Total Employees</span>
+                <i class="fas fa-users text-primary" style="font-size: 20px;"></i>
+            </div>
+            <div class="metric-value">{{ total_employees }}</div>
         </div>
-        <div class="col-md-6">
-            <div class="profile-head">
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="metric-card" style="border-left: 4px solid var(--success);">
+            <div class="d-flex justify-content-between align-items-center">
+                <span class="metric-label">Checked In Today</span>
+                <i class="fas fa-check-circle text-success" style="font-size: 20px;"></i>
+            </div>
+            <div class="metric-value" id="stats-present-count">{{ present_count }}</div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="metric-card" style="border-left: 4px solid var(--warning);">
+            <div class="d-flex justify-content-between align-items-center">
+                <span class="metric-label">Late Arrivals</span>
+                <i class="fas fa-exclamation-circle text-warning" style="font-size: 20px;"></i>
+            </div>
+            <div class="metric-value">{{ late_count }}</div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="metric-card" style="border-left: 4px solid var(--danger);">
+            <div class="d-flex justify-content-between align-items-center">
+                <span class="metric-label">Absent / Off Duty</span>
+                <i class="fas fa-times-circle text-danger" style="font-size: 20px;"></i>
+            </div>
+            <div class="metric-value" id="stats-absent-count">{{ absent_count }}</div>
+        </div>
+    </div>
+</div>
+
+<!-- Main Section (2 Columns) -->
+<div class="row">
+    <!-- Left Column: Tables & Lists -->
+    <div class="col-lg-7 mb-4">
+        <div class="saas-card">
+            <div class="saas-card-header">
+                <ul class="nav nav-saas-tabs" id="dashboardTabs" role="tablist" style="margin-bottom: 0;">
+                    <li class="nav-item">
+                        <a class="nav-link active" id="present-tab" data-toggle="tab" href="#present" role="tab" aria-selected="true">
+                            <i class="fas fa-user-check mr-2"></i>Present
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" id="absent-tab" data-toggle="tab" href="#absent" role="tab" aria-selected="false">
+                            <i class="fas fa-user-slash mr-2"></i>Absent
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" id="history-tab" data-toggle="tab" href="#history" role="tab" aria-selected="false">
+                            <i class="fas fa-history mr-2"></i>Log History
+                        </a>
+                    </li>
+                </ul>
+            </div>
+            
+            <div class="saas-card-body" style="padding: 0;">
+                <div class="tab-content" id="dashboardTabsContent">
+                    
+                    <!-- Present Tab -->
+                    <div class="tab-pane fade show active" id="present" role="tabpanel">
+                        <div class="table-responsive">
+                            <table class="saas-table">
+                                <thead>
+                                    <tr>
+                                        <th>Employee</th>
+                                        <th>Profession</th>
+                                        <th>Check-in Time</th>
+                                        <th>Arrival Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="present-employees-tbody">
+                                    {% for profile in present %}
+                                    <tr id="present-row-{{ profile.first_name }}">
+                                        <td>
+                                            <div class="d-flex align-items-center gap-2">
+                                                {% if profile.image %}
+                                                    <a href="{% url 'profile_detail' profile.id %}">
+                                                        <img src="{{ profile.image.url }}" alt="{{ profile.first_name }}" style="width: 38px; height: 38px; border-radius: 50%; object-fit: cover;">
+                                                    </a>
+                                                {% else %}
+                                                    <a href="{% url 'profile_detail' profile.id %}" class="avatar-placeholder" style="text-decoration: none;">
+                                                        {{ profile.first_name|slice:":1" }}{{ profile.last_name|slice:":1" }}
+                                                    </a>
+                                                {% endif %}
+                                                <div>
+                                                    <a href="{% url 'profile_detail' profile.id %}" class="font-weight-bold d-block text-dark" style="text-decoration: none; hover: underline;">{{ profile.first_name }} {{ profile.last_name }}</a>
+                                                    <small class="text-muted">{{ profile.email }}</small>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td>{{ profile.profession }}</td>
+                                        <td><i class="far fa-clock text-muted mr-1"></i>{{ profile.updated|date:"h:i A" }}</td>
+                                        <td>
+                                            {% if profile.arrival_status == "on_time" %}
+                                                <span class="badge-saas badge-saas-success"><i class="fas fa-check mr-1"></i>On Time</span>
+                                            {% elif profile.arrival_status == "late" %}
+                                                <span class="badge-saas badge-saas-warning"><i class="fas fa-exclamation mr-1"></i>Late</span>
+                                            {% else %}
+                                                <span class="badge-saas badge-saas-secondary">—</span>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    {% empty %}
+                                    <tr id="present-empty-row">
+                                        <td colspan="4" class="text-center py-5 text-muted">
+                                            <i class="fas fa-users-slash d-block mb-3" style="font-size: 32px;"></i>
+                                            No employees have checked in yet today.
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    
+                    <!-- Absent Tab -->
+                    <div class="tab-pane fade" id="absent" role="tabpanel">
+                        <div class="table-responsive">
+                            <table class="saas-table">
+                                <thead>
+                                    <tr>
+                                        <th>Employee</th>
+                                        <th>Profession</th>
+                                        <th>Shift Start</th>
+                                        <th>Hours of Work</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="absent-employees-tbody">
+                                    {% for profile in absent %}
+                                    <tr id="absent-row-{{ profile.first_name }}">
+                                        <td>
+                                            <div class="d-flex align-items-center gap-2">
+                                                {% if profile.image %}
+                                                    <a href="{% url 'profile_detail' profile.id %}">
+                                                        <img src="{{ profile.image.url }}" alt="{{ profile.first_name }}" style="width: 38px; height: 38px; border-radius: 50%; object-fit: cover;">
+                                                    </a>
+                                                {% else %}
+                                                    <a href="{% url 'profile_detail' profile.id %}" class="avatar-placeholder" style="background-color: #f1f5f9; color: #64748b; text-decoration: none;">
+                                                        {{ profile.first_name|slice:":1" }}{{ profile.last_name|slice:":1" }}
+                                                    </a>
+                                                {% endif %}
+                                                <div>
+                                                    <a href="{% url 'profile_detail' profile.id %}" class="font-weight-bold d-block text-dark" style="text-decoration: none; hover: underline;">{{ profile.first_name }} {{ profile.last_name }}</a>
+                                                    <small class="text-muted">{{ profile.email }}</small>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td>{{ profile.profession }}</td>
+                                        <td><i class="far fa-clock text-muted mr-1"></i>{{ profile.shift|time:"h:i A" }}</td>
+                                        <td>{{ profile.working_hours }} hrs</td>
+                                    </tr>
+                                    {% empty %}
+                                    <tr id="absent-empty-row">
+                                        <td colspan="4" class="text-center py-5 text-muted">
+                                            <i class="fas fa-check-circle text-success d-block mb-3" style="font-size: 32px;"></i>
+                                            All registered employees are present!
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    
+                    <!-- Log History Tab -->
+                    <div class="tab-pane fade" id="history" role="tabpanel">
+                        <div class="table-responsive">
+                            <table class="saas-table">
+                                <thead>
+                                    <tr>
+                                        <th>Raw Scan Key</th>
+                                        <th>Scan Date & Time</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for face in scanned %}
+                                    <tr>
+                                        <td>
+                                            <code class="px-2 py-1 bg-light rounded text-dark font-weight-bold">
+                                                {{ face.last_face }}
+                                            </code>
+                                        </td>
+                                        <td><i class="far fa-clock text-muted mr-1"></i>{{ face.date|date:"l, M d, Y — h:i A" }}</td>
+                                    </tr>
+                                    {% empty %}
+                                    <tr>
+                                        <td colspan="2" class="text-center py-5 text-muted">
+                                            No scans recorded yet.
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="saas-card-body border-top p-3 text-right">
+                            <a href="{% url 'clear_history' %}" class="btn btn-saas-secondary btn-sm" onclick="return confirm('Clear scan logs?')">
+                                <i class="fas fa-trash-alt mr-2"></i>Clear Logs
+                            </a>
+                        </div>
+                    </div>
+                    
+                </div>
             </div>
         </div>
-        <div class="col-md-3">
-            <a target="_blank" class="scan" href="{% url 'details' %}"><input type="submit" class="profile-edit-btn m-2"
-                    name="btnAddMore" value="Run Scanner" /></a>
-            <a   href="{% url 'profiles' %}"><input type="submit" class="profile-edit-btn m-2 "
-                        name="btnAddMore" value="Profiles" /></a>
+    </div>
+    
+    <!-- Right Column: Live Webcam Scanner -->
+    <div class="col-lg-5 mb-4">
+        <!-- Scanner Card -->
+        <div class="saas-card">
+            <div class="saas-card-header">
+                <span class="font-weight-bold text-dark"><i class="fas fa-video text-primary mr-2"></i>Live Attendance Kiosk</span>
+                <span class="badge badge-secondary" style="border-radius: 9999px;">Active</span>
+            </div>
+            <div class="saas-card-body p-0">
+                <div id="scanner-camera-container">
+                    <video id="scanner-video" autoplay playsinline></video>
+                    <canvas id="scanner-canvas"></canvas>
+                    <div class="scanner-overlay">
+                        <div class="scanner-frame"></div>
+                        <div class="scanner-status">
+                            <span class="badge text-white">
+                                <span class="pulse-dot" id="camera-dot"></span>
+                                <span id="camera-label">Starting Kiosk...</span>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Real-time check-ins widget -->
+        <div class="recent-checkins-card">
+            <div class="recent-checkins-header d-flex justify-content-between align-items-center">
+                <span><i class="fas fa-rss text-primary mr-2"></i>Live Check-in Feed</span>
+                <span class="badge-saas badge-saas-success" id="checkin-count" style="font-size: 11px;">0 checked in</span>
+            </div>
+            <div class="recent-checkins-body" id="checkin-list">
+                <div class="text-center text-muted py-5" id="no-checkins-msg">
+                    <i class="far fa-clock mb-2 d-block" style="font-size: 24px;"></i>
+                    Waiting for check-ins...
+                </div>
+            </div>
         </div>
     </div>
-    <hr>
-    <ul class="nav nav-tabs" id="myTab" role="tablist">
-        <li class="nav-item" role="presentation">
-            <a class="nav-link active" id="present-tab" data-toggle="tab" href="#present" role="tab"
-                aria-controls="home" aria-selected="true">Present</a>
-        </li>
-        <li class="nav-item" role="presentation">
-            <a class="nav-link" id="absent-tab" data-toggle="tab" href="#absent" role="tab" aria-controls="profile"
-                aria-selected="false">Employee Details</a>
-        </li>
-        <li class="nav-item" role="presentation">
-            <a class="nav-link" id="history-tab" data-toggle="tab" href="#history" role="tab" aria-controls="contact"
-                aria-selected="false">Attendance</a>
-        </li>
-    </ul>
-
-    <div class="tab-content" id="myTabContent">
-        <br>
-        <div class="tab-pane fade show active" id="present" role="tabpanel" aria-labelledby="home-tab">
-
-            <table class="table table-striped ">
-                <thead>
-                    <tr>
-                        <th scope="col"> </th>
-                        <th scope="col">Name</th>
-                        <th scope="col">Status</th>
-                        <th scope="col">Entry Time</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for profile in present %}
-                    <tr>
-                        <th scope="row">-</th>
-                        <td>{{profile.first_name}} {{profile.last_name}}</td>
-                        <td>{{profile.status}}</td>
-                        <td>{{profile.updated |date:"h:iA"}}</td>
-                    </tr>
-                    {% endfor%}
-                </tbody>
-            </table>
-            <a href="{% url 'reset' %}"><button type="button" class="btn btn-outline-secondary">Reset</button></a>
-            <a href="{% url 'index' %}"><button type="button" class="btn btn-outline-primary">Refresh</button></a>
-
-        </div>
-
-        <div class="tab-pane fade" id="absent" role="tabpanel" aria-labelledby="profile-tab">
-            <table class="table table-striped ">
-                <thead>
-                    <tr>
-                        <th scope="col"> </th>
-                        <th scope="col">Name</th>
-                        <th scope="col">Status</th>
-                        <th scope="col">Shift Time</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for profile in absent %}
-                    <tr>
-                        <th scope="row">-</th>
-                        <td>{{profile.first_name}} {{profile.last_name}}</td>
-                        <td>{{profile.status}}</td>
-                        <td>{{profile.shift}}</td>
-                    </tr>
-                    {% endfor%}
-                </tbody>
-            </table>
-
-        </div>
-
-        <div class="tab-pane fade" id="history" role="tabpanel" aria-labelledby="contact-tab">
-            <table class="table table-striped ">
-                <thead>
-                    <tr>
-                        <th scope="col"> </th>
-                        <th scope="col">Profile ID</th>
-                        <th scope="col">Date</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for face in scanned %}
-                    <tr>
-                        <th scope="row">-</th>
-                        <td>{{face.last_face}}</td>
-                        <td>{{face.date}}</td>
-                        
-                    </tr>
-                    {% endfor%}
-                </tbody>
-            </table>
-            <a href="{% url 'clear_history' %}"><button type="button" class="btn btn-outline-secondary">Clear History</button></a>
-        </div>
-    </div>
-
 </div>
-<script>
-    $(".scan").click(function () {
-        var postData = { csrfmiddlewaretoken: '{{ csrf_token }}' }
-        $.ajax({
-            url: "{% url 'scan' %}",
-            data: {
 
-            },
-        });
-    });
+<script>
+    // --- Live clock & date updater ---
+    (function() {
+        const timeEl = document.getElementById('clock-time');
+        const dateEl = document.getElementById('clock-date');
+        
+        function updateClock() {
+            const now = new Date();
+            if (timeEl) {
+                timeEl.textContent = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+            }
+            if (dateEl) {
+                dateEl.textContent = now.toLocaleDateString([], { weekday: 'long', year: 'numeric', month: 'short', day: 'numeric' });
+            }
+        }
+        updateClock();
+        setInterval(updateClock, 1000);
+    })();
+
+    // --- Embedded Live Face Recognition Scan Controller ---
+    (function() {
+        const video = document.getElementById('scanner-video');
+        const dot = document.getElementById('camera-dot');
+        const label = document.getElementById('camera-label');
+        const canvas = document.getElementById('scanner-canvas');
+        const checkinList = document.getElementById('checkin-list');
+        const checkinCountBadge = document.getElementById('checkin-count');
+        const noCheckinsMsg = document.getElementById('no-checkins-msg');
+        
+        if (!video) return;
+
+        const recentlyScanned = {}; // name -> timestamp
+        const COOLDOWN_MS = 15000;  // 15 seconds cooldown for same profile
+        let checkinCount = 0;
+
+        // Sound player
+        function playWebBeep() {
+            try {
+                const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                const oscillator = audioCtx.createOscillator();
+                const gainNode = audioCtx.createGain();
+                
+                oscillator.connect(gainNode);
+                gainNode.connect(audioCtx.destination);
+                
+                oscillator.type = 'sine';
+                oscillator.frequency.setValueAtTime(1000, audioCtx.currentTime); // 1000Hz
+                gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime);        // volume
+                
+                oscillator.start();
+                setTimeout(() => {
+                    oscillator.stop();
+                    audioCtx.close();
+                }, 150);
+            } catch (e) {
+                console.error("Audio Context playback error:", e);
+            }
+        }
+
+        // Custom notification system (HTML toasts)
+        function showToast(message, type = 'success') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.style.pointerEvents = 'auto';
+            toast.className = `alert alert-${type === 'success' ? 'success' : 'warning'} alert-dismissible fade show shadow`;
+            toast.style.minWidth = '320px';
+            toast.style.borderRadius = '12px';
+            toast.style.borderLeft = `6px solid ${type === 'success' ? '#10b981' : '#f59e0b'}`;
+            toast.style.background = '#ffffff';
+            toast.style.color = '#0f172a';
+            toast.style.marginBottom = '8px';
+            
+            toast.innerHTML = `
+                <div class="d-flex align-items-center">
+                    <div style="font-size: 24px; margin-right: 12px;">
+                        ${type === 'success' ? '✅' : '⚠️'}
+                    </div>
+                    <div>
+                        <strong style="color: ${type === 'success' ? '#10b981' : '#d97706'}">
+                            ${type === 'success' ? 'Check-in Successful' : 'Alert'}
+                        </strong>
+                        <div class="small text-dark font-weight-bold mt-1">${message}</div>
+                    </div>
+                </div>
+                <button type="button" class="close" data-dismiss="alert" aria-label="Close" style="top: 8px;">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            `;
+            
+            container.appendChild(toast);
+            setTimeout(() => {
+                $(toast).alert('close');
+            }, 4500);
+        }
+
+        // Live check-in list feeder (right sidebar)
+        function addToFeed(name, status, profileId) {
+            if (noCheckinsMsg) {
+                noCheckinsMsg.style.display = 'none';
+            }
+            
+            checkinCount++;
+            if (checkinCountBadge) {
+                checkinCountBadge.textContent = `${checkinCount} checked in`;
+            }
+
+            const now = new Date();
+            const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+
+            const statusLabel = status === 'on_time' ? 'On Time' : (status === 'late' ? 'Late' : '');
+            const badgeClass = status === 'on_time' ? 'badge-saas-success' : 'badge-saas-warning';
+            const statusBadge = statusLabel ? `<span class="badge-saas ${badgeClass} ml-2">${statusLabel}</span>` : '';
+
+            // Extract initials
+            const names = name.split(' ');
+            const initials = names.map(n => n[0]).join('').substring(0, 2).toUpperCase();
+
+            const profileUrl = profileId ? `/profile/${profileId}/` : '#';
+            const linkStartAvatar = profileId ? `<a href="${profileUrl}" class="avatar-placeholder" style="text-decoration: none;">` : `<div class="avatar-placeholder">`;
+            const linkEndAvatar = profileId ? `</a>` : `</div>`;
+            const linkStartName = profileId ? `<a href="${profileUrl}" class="font-weight-bold text-dark d-block" style="text-decoration: none; hover: underline;">` : `<div class="font-weight-bold text-dark">`;
+            const linkEndName = profileId ? `</a>` : `</div>`;
+
+            const item = document.createElement('div');
+            item.className = 'recent-item';
+            item.innerHTML = `
+                ${linkStartAvatar}${initials}${linkEndAvatar}
+                <div style="flex-grow: 1;">
+                    ${linkStartName}${name} ${statusBadge}${linkEndName}
+                    <div class="small text-muted">${timeStr}</div>
+                </div>
+            `;
+
+            checkinList.insertBefore(item, checkinList.firstChild);
+
+            while (checkinList.children.length > 5) {
+                checkinList.removeChild(checkinList.lastChild);
+            }
+
+            // --- Real-time update Left Tab ---
+            // Move row from Absent Table to Present Table dynamically
+            updateDashboardTables(name, status, timeStr, profileId);
+        }
+
+        function updateDashboardTables(name, status, timeStr, profileId) {
+            // Find row in absent table
+            const cleanName = name.trim();
+            // Since employee first name is used in ID row-first_name
+            const firstName = cleanName.split(' ')[0];
+            const absentRow = document.getElementById(`absent-row-${firstName}`);
+            
+            if (absentRow) {
+                // Remove it
+                absentRow.remove();
+                
+                // If absent table is empty, show empty message
+                const absentBody = document.getElementById('absent-employees-tbody');
+                if (absentBody && absentBody.children.length === 0) {
+                    absentBody.innerHTML = `
+                        <tr id="absent-empty-row">
+                            <td colspan="4" class="text-center py-5 text-muted">
+                                <i class="fas fa-check-circle text-success d-block mb-3" style="font-size: 32px;"></i>
+                                All registered employees are present!
+                            </td>
+                        </tr>
+                    `;
+                }
+
+                // Increment present stats
+                const presentStatsEl = document.getElementById('stats-present-count');
+                const absentStatsEl = document.getElementById('stats-absent-count');
+                if (presentStatsEl) {
+                    const currentPres = parseInt(presentStatsEl.textContent) || 0;
+                    presentStatsEl.textContent = currentPres + 1;
+                }
+                if (absentStatsEl) {
+                    const currentAbs = parseInt(absentStatsEl.textContent) || 0;
+                    absentStatsEl.textContent = Math.max(0, currentAbs - 1);
+                }
+
+                // Add to present table
+                const presentBody = document.getElementById('present-employees-tbody');
+                const emptyPresentRow = document.getElementById('present-empty-row');
+                if (emptyPresentRow) {
+                    emptyPresentRow.remove();
+                }
+
+                const statusLabel = status === 'on_time' ? 'On Time' : (status === 'late' ? 'Late' : '');
+                const badgeClass = status === 'on_time' ? 'badge-saas-success' : 'badge-saas-warning';
+                const statusBadge = `<span class="badge-saas ${badgeClass}"><i class="fas ${status === 'on_time' ? 'fa-check' : 'fa-exclamation'} mr-1"></i>${statusLabel}</span>`;
+
+                const profileUrl = profileId ? `/profile/${profileId}/` : '#';
+                const linkStartAvatar = profileId ? `<a href="${profileUrl}" class="avatar-placeholder" style="text-decoration: none;">` : `<div class="avatar-placeholder">`;
+                const linkEndAvatar = profileId ? `</a>` : `</div>`;
+                const linkStartName = profileId ? `<a href="${profileUrl}" class="font-weight-bold text-dark d-block" style="text-decoration: none; hover: underline;">` : `<span class="font-weight-bold d-block">`;
+                const linkEndName = profileId ? `</a>` : `</span>`;
+
+                const newRow = document.createElement('tr');
+                newRow.id = `present-row-${firstName}`;
+                newRow.innerHTML = `
+                    <td>
+                        <div class="d-flex align-items-center gap-2">
+                            ${linkStartAvatar}${firstName[0]}${linkEndAvatar}
+                            <div>
+                                ${linkStartName}${name}${linkEndName}
+                                <small class="text-muted">Checked in live</small>
+                            </div>
+                        </div>
+                    </td>
+                    <td>Employee</td>
+                    <td><i class="far fa-clock text-muted mr-1"></i>${timeStr}</td>
+                    <td>${statusBadge}</td>
+                `;
+                if (presentBody) {
+                    presentBody.insertBefore(newRow, presentBody.firstChild);
+                }
+            }
+        }
+
+        // Initialize browser media devices webcam
+        if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+            navigator.mediaDevices.getUserMedia({
+                video: {
+                    width: { ideal: 640 },
+                    height: { ideal: 480 },
+                    facingMode: 'user'
+                }
+            })
+            .then(function(stream) {
+                video.srcObject = stream;
+                if (dot) dot.classList.add('active');
+                if (label) label.textContent = 'Kiosk Active — Ready to scan';
+
+                window.addEventListener('beforeunload', function() {
+                    stream.getTracks().forEach(function(track) { track.stop(); });
+                });
+
+                if (canvas) {
+                    const ctx = canvas.getContext('2d');
+                    canvas.width = 640;
+                    canvas.height = 480;
+
+                    const captureCanvas = document.createElement('canvas');
+                    captureCanvas.width = 640;
+                    captureCanvas.height = 480;
+                    const captureCtx = captureCanvas.getContext('2d');
+
+                    setInterval(function() {
+                        if (video.paused || video.ended) return;
+
+                        captureCtx.drawImage(video, 0, 0, captureCanvas.width, captureCanvas.height);
+                        const dataUrl = captureCanvas.toDataURL('image/jpeg', 0.75);
+
+                        fetch('/scan_frame/', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ image: dataUrl })
+                        })
+                        .then(res => res.json())
+                        .then(data => {
+                            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+                            if (data.success && data.results && data.results.length > 0) {
+                                ctx.save();
+                                ctx.translate(canvas.width, 0);
+                                ctx.scale(-1, 1);
+
+                                data.results.forEach(result => {
+                                    const box = result.box;
+                                    const x = box.left;
+                                    const y = box.top;
+                                    const width = box.right - box.left;
+                                    const height = box.bottom - box.top;
+
+                                    ctx.lineWidth = 4;
+                                    if (result.matched) {
+                                        if (result.already_checked_in) {
+                                            ctx.strokeStyle = '#f59e0b'; // orange
+                                            ctx.fillStyle = '#f59e0b';
+                                            
+                                            const now = Date.now();
+                                            const nameKey = result.name;
+                                            if (!recentlyScanned[nameKey] || (now - recentlyScanned[nameKey] > COOLDOWN_MS)) {
+                                                recentlyScanned[nameKey] = now;
+                                                showToast(`${result.name}: already checked in today at ${result.scan_time}`, 'warning');
+                                            }
+                                        } else if (result.outside_shift) {
+                                            ctx.strokeStyle = '#3b82f6'; // blue
+                                            ctx.fillStyle = '#3b82f6';
+                                            
+                                            const now = Date.now();
+                                            const nameKey = result.name;
+                                            if (!recentlyScanned[nameKey] || (now - recentlyScanned[nameKey] > COOLDOWN_MS)) {
+                                                recentlyScanned[nameKey] = now;
+                                                showToast(`${result.name}: Outside of scheduled shift hours`, 'warning');
+                                            }
+                                        } else {
+                                            ctx.strokeStyle = '#10b981'; // success green
+                                            ctx.fillStyle = '#10b981';
+                                            
+                                            const now = Date.now();
+                                            const nameKey = result.name;
+                                            if (!recentlyScanned[nameKey] || (now - recentlyScanned[nameKey] > COOLDOWN_MS)) {
+                                                recentlyScanned[nameKey] = now;
+                                                playWebBeep();
+                                                showToast(result.name, 'success');
+                                                addToFeed(result.name, result.status, result.profile_id);
+                                            }
+                                        }
+                                    } else {
+                                        ctx.strokeStyle = '#ef4444'; // danger red
+                                        ctx.fillStyle = '#ef4444';
+                                    }
+
+                                    ctx.strokeRect(x, y, width, height);
+                                    ctx.fillRect(x, y - 25, width, 25);
+
+                                    ctx.restore();
+                                    ctx.save();
+                                    
+                                    const textX = canvas.width - box.right + 5;
+                                    const textText = result.matched 
+                                        ? `${result.name} (${result.distance})` 
+                                        : `Unknown (${result.distance})`;
+                                    ctx.fillStyle = '#ffffff';
+                                    ctx.font = 'bold 12px Inter, sans-serif';
+                                    ctx.fillText(textText, textX, y - 8);
+                                    
+                                    ctx.restore();
+                                    ctx.save();
+                                    ctx.translate(canvas.width, 0);
+                                    ctx.scale(-1, 1);
+                                });
+                                ctx.restore();
+                            } else {
+                                if (label) label.textContent = 'Kiosk Active — Ready to scan';
+                            }
+                        })
+                        .catch(err => {
+                            console.error("Frame recognition error:", err);
+                        });
+                    }, 800);
+                }
+            })
+            .catch(function(err) {
+                if (label) label.textContent = 'Camera: ' + err.message;
+            });
+        } else {
+            if (label) label.textContent = 'Webcam not supported';
+        }
+    })();
 </script>
 
 {% endblock content %}

@@ -1,0 +1,71 @@
+{% extends "core/base.html" %}
+{% load static %}
+{% block content %}
+
+<div class="saas-card">
+    <div class="saas-card-header">
+        <div>
+            <h4 class="mb-1 text-dark" style="letter-spacing: -0.5px;">Manage Departments</h4>
+            <p class="text-muted mb-0 small">Create shifts and department name tags to categorize employee schedules.</p>
+        </div>
+    </div>
+    
+    <div class="saas-card-body">
+        <div class="row">
+            <!-- Left Side: Form -->
+            <div class="col-lg-5 mb-4">
+                <h5 class="text-dark font-weight-bold mb-3" style="font-size: 16px;"><i class="fas fa-plus-circle text-muted mr-2"></i>Add Department</h5>
+                
+                <form method="POST" action="." class="needs-validation">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label class="small text-muted font-weight-bold">Department Name</label>
+                        {{ form.name }}
+                    </div>
+                    
+                    <div class="border-top pt-3 d-flex gap-2">
+                        <a href="{% url 'schedules' %}" class="btn btn-saas-secondary">
+                            Back
+                        </a>
+                        <button type="submit" class="btn btn-saas-primary flex-grow-1">
+                            <i class="fas fa-save mr-2"></i>Save Department
+                        </button>
+                    </div>
+                </form>
+            </div>
+            
+            <!-- Right Side: List -->
+            <div class="col-lg-7 mb-4">
+                <h5 class="text-dark font-weight-bold mb-3" style="font-size: 16px;"><i class="fas fa-list text-muted mr-2"></i>Existing Categories</h5>
+                
+                {% if subjects %}
+                <div class="table-responsive" style="border: 1px solid var(--border-color); border-radius: var(--radius-md); overflow: hidden;">
+                    <table class="saas-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 60px;">#</th>
+                                <th>Category Name</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for subject in subjects %}
+                            <tr>
+                                <td class="font-weight-bold text-muted">{{ forloop.counter }}</td>
+                                <td class="font-weight-bold text-dark">{{ subject.name }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="alert alert-info py-4 text-center">
+                    <i class="fas fa-info-circle d-block mb-2" style="font-size: 24px;"></i>
+                    No shifts or departments added yet. Use the form on the left to add one!
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock content %}

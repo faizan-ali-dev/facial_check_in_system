@@ -1,0 +1,92 @@
+{% extends "core/base.html" %}
+{% load static %}
+{% block content %}
+
+<div class="saas-card">
+    <div class="saas-card-header d-flex justify-content-between align-items-center">
+        <div>
+            <h4 class="mb-1 text-dark" style="letter-spacing: -0.5px;">Work Schedules</h4>
+            <p class="text-muted mb-0 small">Define shifts, work hours, and grace periods for employees.</p>
+        </div>
+        <div class="btn-group">
+            <a href="{% url 'add_schedule' %}" class="btn btn-saas-primary mr-2" style="border-radius: 8px;">
+                <i class="fas fa-calendar-plus mr-2"></i>Add Schedule Slot
+            </a>
+            <a href="{% url 'add_subject' %}" class="btn btn-saas-secondary" style="border-radius: 8px;">
+                <i class="fas fa-building mr-2"></i>Manage Departments
+            </a>
+        </div>
+    </div>
+    
+    <div class="saas-card-body">
+        {% if grouped_schedules %}
+            {% for day, day_schedules in grouped_schedules.items %}
+            <div class="mb-4">
+                <div class="d-flex align-items-center mb-3">
+                    <span class="badge-saas badge-saas-secondary" style="font-size: 14px; font-weight: 700; padding: 6px 16px;">
+                        <i class="far fa-calendar-alt mr-2"></i>{{ day }}
+                    </span>
+                    <hr style="flex-grow: 1; margin-left: 15px; border-top: 1px solid var(--border-color);">
+                </div>
+                
+                <div class="table-responsive">
+                    <table class="saas-table">
+                        <thead>
+                            <tr>
+                                <th>Employee</th>
+                                <th>Shift / Department</th>
+                                <th>Start Time</th>
+                                <th>End Time</th>
+                                <th>Grace Period</th>
+                                <th class="text-right">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for schedule in day_schedules %}
+                            <tr>
+                                <td>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <div class="avatar-placeholder">
+                                            {{ schedule.profile.first_name|slice:":1" }}{{ schedule.profile.last_name|slice:":1" }}
+                                        </div>
+                                        <div>
+                                            <span class="font-weight-bold d-block">{{ schedule.profile.first_name }} {{ schedule.profile.last_name }}</span>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="badge-saas badge-saas-success" style="background-color: var(--primary-light); color: var(--primary-color);">
+                                        {{ schedule.subject.name }}
+                                    </span>
+                                </td>
+                                <td><i class="far fa-clock text-muted mr-1"></i>{{ schedule.start_time|time:"h:i A" }}</td>
+                                <td><i class="far fa-clock text-muted mr-1"></i>{{ schedule.end_time|time:"h:i A" }}</td>
+                                <td>{{ schedule.grace_period_minutes }} minutes</td>
+                                <td class="text-right">
+                                    <div class="btn-group">
+                                        <a href="{% url 'edit_schedule' schedule.id %}" class="btn btn-outline-primary btn-sm mr-2" style="border-radius: 8px;">
+                                            <i class="fas fa-edit"></i> Edit
+                                        </a>
+                                        <a href="{% url 'delete_schedule' schedule.id %}" class="btn btn-outline-danger btn-sm" style="border-radius: 8px;" onclick="return confirm('Are you sure you want to delete this schedule?');">
+                                            <i class="fas fa-trash-alt"></i> Delete
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="alert alert-info py-4 text-center">
+                <i class="fas fa-calendar-times d-block mb-3" style="font-size: 36px; color: var(--text-muted);"></i>
+                <strong>No work schedules defined.</strong>
+                <p class="text-muted mt-1 small">Click "Add Schedule Slot" above to define shifts for your employees.</p>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+{% endblock content %}
