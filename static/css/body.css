@@ -241,9 +241,9 @@ h1, h2, h3, h4, h5, h6 {
 
 /* Badges */
 .badge-saas {
-    font-size: 12px;
+    font-size: 10px;
     font-weight: 600;
-    padding: 6px 12px;
+    padding: 6px 8px;
     border-radius: 9999px;
     display: inline-block;
 }
@@ -324,8 +324,8 @@ h1, h2, h3, h4, h5, h6 {
 
 /* Avatar Placeholder Global Style */
 .avatar-placeholder {
-    width: 38px;
-    height: 38px;
+    width: 28px;
+    height: 28px;
     border-radius: 50%;
     background-color: var(--primary-light);
     color: var(--primary-color);
@@ -335,4 +335,130 @@ h1, h2, h3, h4, h5, h6 {
     font-weight: 700;
     font-size: 12px;
     text-transform: uppercase;
+}
+
+/* Mobile Header Bar */
+.mobile-header-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background-color: var(--card-bg);
+    border-bottom: 1px solid var(--border-color);
+    padding: 12px 20px;
+    position: sticky;
+    top: 0;
+    z-index: 90;
+    margin: -40px -40px 30px -40px; /* Offset the main wrapper padding */
+}
+
+.menu-toggle-btn {
+    background: transparent;
+    border: none;
+    font-size: 20px;
+    color: var(--text-main);
+    cursor: pointer;
+    padding: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    outline: none !important;
+}
+
+.mobile-brand {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* Sidebar Overlay */
+.sidebar-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background-color: rgba(15, 23, 42, 0.5);
+    z-index: 95;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+}
+
+.sidebar-overlay.active {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+/* Media Queries for Responsiveness */
+@media (max-width: 991.98px) {
+    .sidebar {
+        left: -250px; /* Hidden off-screen */
+        transition: left 0.3s ease;
+        z-index: 100;
+        box-shadow: var(--shadow-lg);
+    }
+    
+    .sidebar.active {
+        left: 0; /* Slide in */
+    }
+    
+    .main-wrapper {
+        margin-left: 0;
+        padding: 24px;
+        width: 100%;
+        max-width: 100%;
+    }
+    
+    .mobile-header-bar {
+        margin: -24px -24px 24px -24px; /* Adjust offset for mobile padding */
+    }
+}
+
+@media (max-width: 767.98px) {
+    .main-wrapper {
+        padding: 16px;
+    }
+    
+    .mobile-header-bar {
+        margin: -16px -16px 20px -16px;
+    }
+    
+    /* Optimize cards and dashboard spacing on smaller mobile devices */
+    .saas-card-header {
+        padding: 16px 20px;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+    }
+    
+    .saas-card-header .btn-group,
+    .saas-card-header .btn-group-vertical {
+        width: 100%;
+        flex-direction: column;
+        gap: 8px;
+    }
+    
+    .saas-card-header .btn-group .btn {
+        width: 100%;
+        margin-right: 0 !important;
+        margin-bottom: 4px;
+    }
+    
+    .dashboard-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 16px;
+    }
+    
+    .live-clock-card {
+        text-align: left;
+    }
+    
+    .metric-card {
+        padding: 16px;
+    }
+    
+    .metric-value {
+        font-size: 26px;
+    }
 }
