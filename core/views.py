@@ -6,13 +6,12 @@ try:
     import cv2
     import numpy as np
     import winsound
-    from playsound import playsound
 except ImportError:
     face_recognition = None
     cv2 = None
     np = None
     winsound = None
-    playsound = None
+
 from django.db.models import Q
 import os
 from datetime import datetime, timedelta
