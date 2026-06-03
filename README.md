@@ -32,7 +32,7 @@ Follow these steps to set up the Facial Attendance System on your local machine:
 
 1. **Clone the Repository**:
    ```bash
-   git clone https://github.com/vendotha/facial-attendance-system.git
+   git clone https://github.com/faizan-ali-dev/facial_check_in_system.git
    cd facial-attendance-system
    ```
 
@@ -246,10 +246,9 @@ This project is licensed under the MIT License. See the [LICENSE](LICENSE) file 
 
 For any questions or feedback, feel free to reach out:
 
-- **Name**: Buvananand Vendotha
-- **Email**: [vendotha@gmail.com](mailto:vendotha@gmail.com)
-- **LinkedIn**: [vendotha](https://www.linkedin.com/in/vendotha/)
-- **GitHub**: [vendotha](https://github.com/vendotha)
+- **Name**: Faizan Ali
+- **Email**: [faizancode68@gmail.com](mailto:faizancode68@gmail.com)
+- **GitHub**: [faizan-ali-dev](https://github.com/faizan-ali-dev)
 
 ---
 
