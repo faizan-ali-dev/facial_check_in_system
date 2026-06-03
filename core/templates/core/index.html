@@ -281,14 +281,14 @@
                                     {% for profile in present %}
                                     <tr id="present-row-{{ profile.first_name }}">
                                         <td>
-                                            <div class="d-flex align-items-center gap-2">
+                                            <div class="d-flex align-items-center">
                                                 {% if profile.image %}
-                                                    <a href="{% url 'profile_detail' profile.id %}">
+                                                    <a href="{% url 'profile_detail' profile.id %}" class="mr-3">
                                                         <img src="{{ profile.image.url }}" alt="{{ profile.first_name }}" style="width: 38px; height: 38px; border-radius: 50%; object-fit: cover;">
                                                     </a>
                                                 {% else %}
-                                                    <a href="{% url 'profile_detail' profile.id %}" class="avatar-placeholder" style="text-decoration: none;">
-                                                        {{ profile.first_name|slice:":1" }}{{ profile.last_name|slice:":1" }}
+                                                    <a href="{% url 'profile_detail' profile.id %}" class="avatar-placeholder mr-3" style="text-decoration: none;">
+                                                        {{ profile.first_name|slice:":1" }}
                                                     </a>
                                                 {% endif %}
                                                 <div>
@@ -338,14 +338,14 @@
                                     {% for profile in absent %}
                                     <tr id="absent-row-{{ profile.first_name }}">
                                         <td>
-                                            <div class="d-flex align-items-center gap-2">
+                                            <div class="d-flex align-items-center">
                                                 {% if profile.image %}
-                                                    <a href="{% url 'profile_detail' profile.id %}">
+                                                    <a href="{% url 'profile_detail' profile.id %}" class="mr-3">
                                                         <img src="{{ profile.image.url }}" alt="{{ profile.first_name }}" style="width: 38px; height: 38px; border-radius: 50%; object-fit: cover;">
                                                     </a>
                                                 {% else %}
-                                                    <a href="{% url 'profile_detail' profile.id %}" class="avatar-placeholder" style="background-color: #f1f5f9; color: #64748b; text-decoration: none;">
-                                                        {{ profile.first_name|slice:":1" }}{{ profile.last_name|slice:":1" }}
+                                                    <a href="{% url 'profile_detail' profile.id %}" class="avatar-placeholder mr-3" style="background-color: #f1f5f9; color: #64748b; text-decoration: none;">
+                                                        {{ profile.first_name|slice:":1" }}
                                                     </a>
                                                 {% endif %}
                                                 <div>
@@ -567,12 +567,11 @@
             const badgeClass = status === 'on_time' ? 'badge-saas-success' : 'badge-saas-warning';
             const statusBadge = statusLabel ? `<span class="badge-saas ${badgeClass} ml-2">${statusLabel}</span>` : '';
 
-            // Extract initials
-            const names = name.split(' ');
-            const initials = names.map(n => n[0]).join('').substring(0, 2).toUpperCase();
+            // Extract first letter of first name
+            const firstLetter = name.trim().charAt(0).toUpperCase();
 
             const profileUrl = profileId ? `/profile/${profileId}/` : '#';
-            const linkStartAvatar = profileId ? `<a href="${profileUrl}" class="avatar-placeholder" style="text-decoration: none;">` : `<div class="avatar-placeholder">`;
+            const linkStartAvatar = profileId ? `<a href="${profileUrl}" class="avatar-placeholder mr-3" style="text-decoration: none;">` : `<div class="avatar-placeholder mr-3">`;
             const linkEndAvatar = profileId ? `</a>` : `</div>`;
             const linkStartName = profileId ? `<a href="${profileUrl}" class="font-weight-bold text-dark d-block" style="text-decoration: none; hover: underline;">` : `<div class="font-weight-bold text-dark">`;
             const linkEndName = profileId ? `</a>` : `</div>`;
@@ -580,7 +579,7 @@
             const item = document.createElement('div');
             item.className = 'recent-item';
             item.innerHTML = `
-                ${linkStartAvatar}${initials}${linkEndAvatar}
+                ${linkStartAvatar}${firstLetter}${linkEndAvatar}
                 <div style="flex-grow: 1;">
                     ${linkStartName}${name} ${statusBadge}${linkEndName}
                     <div class="small text-muted">${timeStr}</div>
@@ -646,7 +645,7 @@
                 const statusBadge = `<span class="badge-saas ${badgeClass}"><i class="fas ${status === 'on_time' ? 'fa-check' : 'fa-exclamation'} mr-1"></i>${statusLabel}</span>`;
 
                 const profileUrl = profileId ? `/profile/${profileId}/` : '#';
-                const linkStartAvatar = profileId ? `<a href="${profileUrl}" class="avatar-placeholder" style="text-decoration: none;">` : `<div class="avatar-placeholder">`;
+                const linkStartAvatar = profileId ? `<a href="${profileUrl}" class="avatar-placeholder mr-3" style="text-decoration: none;">` : `<div class="avatar-placeholder mr-3">`;
                 const linkEndAvatar = profileId ? `</a>` : `</div>`;
                 const linkStartName = profileId ? `<a href="${profileUrl}" class="font-weight-bold text-dark d-block" style="text-decoration: none; hover: underline;">` : `<span class="font-weight-bold d-block">`;
                 const linkEndName = profileId ? `</a>` : `</span>`;
@@ -655,8 +654,8 @@
                 newRow.id = `present-row-${firstName}`;
                 newRow.innerHTML = `
                     <td>
-                        <div class="d-flex align-items-center gap-2">
-                            ${linkStartAvatar}${firstName[0]}${linkEndAvatar}
+                        <div class="d-flex align-items-center">
+                            ${linkStartAvatar}${firstName[0].toUpperCase()}${linkEndAvatar}
                             <div>
                                 ${linkStartName}${name}${linkEndName}
                                 <small class="text-muted">Checked in live</small>

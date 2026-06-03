@@ -81,9 +81,9 @@
                     <tr>
                         <td>{{ forloop.counter }}</td>
                         <td>
-                            <div class="d-flex align-items-center gap-2">
-                                <div class="avatar-placeholder">
-                                    {{ record.profile.first_name|slice:":1" }}{{ record.profile.last_name|slice:":1" }}
+                            <div class="d-flex align-items-center">
+                                <div class="avatar-placeholder mr-3">
+                                    {{ record.profile.first_name|slice:":1" }}
                                 </div>
                                 <div>
                                     <span class="font-weight-bold d-block">{{ record.profile.first_name }} {{ record.profile.last_name }}</span>
