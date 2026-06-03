@@ -29,10 +29,9 @@
 </head>
 
 <body>
-    <div class="sidebar-overlay" id="sidebarOverlay"></div>
     <div class="app-layout">
         <!-- Sidebar -->
-        <aside class="sidebar" id="appSidebar">
+        <aside class="sidebar">
             <div class="sidebar-brand">
                 <i class="fas fa-fingerprint text-primary" style="font-size: 26px;"></i>
                 <span style="font-family: var(--font-heading); font-weight: 800; letter-spacing: -0.5px;">Attend<span style="color: var(--primary-color)">io</span></span>
@@ -77,35 +76,10 @@
         
         <!-- Main Content Wrapper -->
         <main class="main-wrapper">
-            <!-- Mobile Header Bar -->
-            <header class="mobile-header-bar d-lg-none">
-                <button class="menu-toggle-btn" id="menuToggleBtn">
-                    <i class="fas fa-bars"></i>
-                </button>
-                <div class="mobile-brand">
-                    <i class="fas fa-fingerprint text-primary" style="font-size: 22px;"></i>
-                    <span style="font-family: var(--font-heading); font-weight: 800; letter-spacing: -0.5px; font-size: 18px;">Attend<span style="color: var(--primary-color)">io</span></span>
-                </div>
-                <div style="width: 32px;"></div> <!-- Spacer to center the logo -->
-            </header>
-
             {% block content %}
             {% endblock content %}
         </main>
     </div>
-
-    <script>
-        $(document).ready(function() {
-            $('#menuToggleBtn').click(function() {
-                $('#appSidebar').addClass('active');
-                $('#sidebarOverlay').addClass('active');
-            });
-            $('#sidebarOverlay').click(function() {
-                $('#appSidebar').removeClass('active');
-                $(this).removeClass('active');
-            });
-        });
-    </script>
 </body>
 
 </html>
